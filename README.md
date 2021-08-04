@@ -1,0 +1,3 @@
+- 競賽網址：https://icdc.ntust.edu.tw/2021/index2.php?page=Intro  
+- 為E組標準元件之初賽題目(106學年前則為FPGA組)
+- 皆有達到當年規定之等級A的結果
