@@ -5,29 +5,23 @@ input 			en;
 input 	[23:0] 	central;
 input 	[11:0] 	radius;
 input 	[1:0] 	mode;
+output reg 			busy;
+output reg			valid;
+output reg 	[7:0] 	candidate;
 
-output 			busy;
-output 			valid;
-output 	[7:0] 	candidate;
-
-reg 			busy;
-reg 			valid;
-reg 	[7:0] 	candidate;
-reg 	[3:0]	x1, y1, x2, y2;
-reg 	[3:0] 	r1, r2;
+reg 	[3:0]	x1, y1, x2, y2, r1, r2;
 reg 	[3:0]  	x, y;
-reg 			state;
 
 wire	[3:0] 	x1_diff, x2_diff, y1_diff, y2_diff;
-wire 	[7:0]	distance1, distance2;
+wire 	[7:0]	p1_diff, p2_diff;
 wire 	[7:0]	R1, R2;
 
-assign x1_diff = (x >= x1) ? x-x1 : x1-x;
-assign x2_diff = (x >= x2) ? x-x2 : x2-x;
-assign y1_diff = (y >= y1) ? y-y1 : y1-y;
-assign y2_diff = (y >= y2) ? y-y2 : y2-y;
-assign distance1 = x1_diff * x1_diff + y1_diff * y1_diff;
-assign distance2 = x2_diff * x2_diff + y2_diff * y2_diff; 
+assign x1_diff = (x > x1) ? x-x1 : x1-x;
+assign y1_diff = (y > y1) ? y-y1 : y1-y;
+assign x2_diff = (x > x2) ? x-x2 : x2-x;
+assign y2_diff = (y > y2) ? y-y2 : y2-y;
+assign p1_diff = x1_diff * x1_diff + y1_diff * y1_diff;
+assign p2_diff = x2_diff * x2_diff + y2_diff * y2_diff; 
 assign R1 = r1 * r1;
 assign R2 = r2 * r2;
 
@@ -48,8 +42,8 @@ always @ (posedge clk or posedge rst) begin
 	else begin
 		if(!busy) begin
 			if(en) begin
-				x1 <= central[23:20];//A
-				y1 <= central[19:16];//B
+				x1 <= central[23:20];
+				y1 <= central[19:16];
 				x2 <= central[15:12];
 				y2 <= central[11:8];
 				r1 <= radius[11:8];
@@ -61,33 +55,33 @@ always @ (posedge clk or posedge rst) begin
 			end
 		end
 		else begin
-			if(y > 8 || x > 8) begin
+			if(valid) begin
 				busy <= 0;
 				valid <= 0;
 			end
 			else begin	
 				case(mode) 
 					2'b00: begin
-						if(R1 >= distance1)
+						if(R1 >= p1_diff)
 							candidate <= candidate + 1;
-					end//A
+					end
 					2'b01: begin
-						if(R1 >= distance1 && R2 >= distance2)
+						if(R1 >= p1_diff && R2 >= p1_diff)
 							candidate <= candidate + 1;
-						end//A and B
+					end
 					2'b10: begin
-						if((R1 >= distance1 && R2 < distance2) || (R2 >= distance2 && R1 < distance1))
+						if((R1 >= p1_diff && R2 < p2_diff) || (R2 >= p2_diff && R1 < p1_diff))
 							candidate <= candidate + 1;
-					end//(A or B) - (A and B)
+					end
 				endcase
-				if(y == 8) begin
-					if(x == 8)
-						valid <= 1;
-					y <= 1;
-					x <= x + 1;
+				if(x == 4'd8) begin
+					x <= 1;
+					y <= y + 1;
+					if(y == 4'd8)
+						valid <= 1;					
 				end
 				else begin
-					y <= y + 1;
+					x <= x + 1;
 				end
 			end
 		end
